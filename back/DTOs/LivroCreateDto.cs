@@ -1,0 +1,1 @@
+public record struct LivroCreateDto(string Nome, decimal Preco, string FaixaEtaria, List<CategoriaCreateDto> Categorias);

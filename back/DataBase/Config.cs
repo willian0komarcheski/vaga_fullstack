@@ -16,6 +16,7 @@ public class Config : DbContext
         modelBuilder.Entity<Livro>()
             .HasMany(l => l.Categorias)
             .WithOne(c => c.Livro)
-            .HasForeignKey(c => c.LivroId);
+            .HasForeignKey(c => c.LivroId)
+            .IsRequired();
     }
 }

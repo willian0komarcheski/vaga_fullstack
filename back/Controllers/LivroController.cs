@@ -37,23 +37,35 @@ namespace back.Controllers
                 return NotFound();
             }
 
-            return livro;
+            return Ok(livro);
         }
 
         // PUT: api/Livro/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutLivro(int id, Livro livro)
+        public async Task<IActionResult> PutLivro(int id, LivroCreateDto livro)
         {
-            if (id != livro.Id)
-            {
-                return BadRequest();
-            }
+            // if (id != livro.Id)
+            // {
+            //     return BadRequest();
+            // }
 
-            _context.Entry(livro).State = EntityState.Modified;
+            var novoLivro = new Livro {
+                Id = id,
+                Nome = livro.Nome,
+                Preco = livro.Preco,
+                FaixaEtaria = livro.FaixaEtaria,
+            };
+
+            var Categorias = livro.Categorias.Select(c => new Categoria { Tipo = c.Tipo, Livro = novoLivro }).ToList();
+
+            novoLivro.Categorias = Categorias;
+
+            _context.Entry(novoLivro).State = EntityState.Modified;
 
             try
             {
                 await _context.SaveChangesAsync();
+                // return Ok(await _context.Livros.Include(l => l.Categorias).FirstOrDefaultAsync(l => l.Id == id));
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -72,13 +84,24 @@ namespace back.Controllers
 
         // POST: api/Livro
         [HttpPost]
-        public async Task<ActionResult<Livro>> PostLivro(Livro livro)
+        public async Task<ActionResult<Livro>> PostLivro(LivroCreateDto livro)
         {
             
-            _context.Livros.Add(livro);
+            var novoLivro = new Livro
+            {
+                Nome = livro.Nome,
+                Preco = livro.Preco,
+                FaixaEtaria = livro.FaixaEtaria,
+            };
+
+            var Categorias = livro.Categorias.Select(c => new Categoria { Tipo = c.Tipo, Livro = novoLivro }).ToList();
+
+            novoLivro.Categorias = Categorias;
+
+            _context.Livros.Add(novoLivro);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetLivro", new { id = livro.Id }, livro);
+            return Ok(await _context.Livros.Include(l => l.Categorias).ToListAsync());
         }
 
         // DELETE: api/Livro/5
