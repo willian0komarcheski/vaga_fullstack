@@ -41,55 +41,76 @@ namespace back.Controllers
         }
 
         // PUT: api/Livro/5
-        // PUT: api/Livro/5
         [HttpPut("{id}")]
         public async Task<IActionResult> PutLivro(int id, LivroCreateDto livroDto)
+        {
+            if (!LivroExists(id))
+            {
+                return NotFound();
+            }
+
+            var livro = await _context.Livros
+                .Include(l => l.Categorias)
+                .FirstOrDefaultAsync(l => l.Id == id);
+
+            if (livro == null)
+            {
+                return NotFound();
+            }
+
+            // Atualiza as propriedades do livro
+            livro.Nome = livroDto.Nome;
+            livro.Preco = livroDto.Preco;
+            livro.FaixaEtaria = livroDto.FaixaEtaria;
+
+            // Atualiza as categorias
+            var existingCategories = livro.Categorias.ToList();
+            var newCategories = livroDto.Categorias.Select(c => c.Tipo).ToList();
+
+            // Remover categorias que não estão mais presentes
+            foreach (var existingCategory in existingCategories)
+            {
+                if (!newCategories.Contains(existingCategory.Tipo))
+                {
+                    _context.Categorias.Remove(existingCategory);
+                }
+            }
+
+            // Adicionar novas categorias ou atualizar existentes
+            foreach (var newCategoryTipo in newCategories)
+            {
+                var existingCategory = existingCategories.FirstOrDefault(c => c.Tipo == newCategoryTipo);
+                if (existingCategory == null)
+                {
+                    livro.Categorias.Add(new Categoria { Tipo = newCategoryTipo, LivroId = livro.Id });
+                }
+                else
+                {
+                    // Se necessário, atualize outras propriedades da categoria aqui
+                    existingCategory.Tipo = newCategoryTipo;
+                    _context.Entry(existingCategory).State = EntityState.Modified;
+                }
+            }
+
+            _context.Entry(livro).State = EntityState.Modified;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
             {
                 if (!LivroExists(id))
-                    {
+                {
                     return NotFound();
-                    }
+                }
+                else
+                {
+                    throw;
+                }
+            }
 
-                var livro = await _context.Livros
-                    .Include(l => l.Categorias)
-                    .FirstOrDefaultAsync(l => l.Id == id);
-
-                if (livro == null)
-                    {
-                    return NotFound();
-                    }
-
-                // Atualiza as propriedades do livro
-                livro.Nome = livroDto.Nome;
-                livro.Preco = livroDto.Preco;
-                livro.FaixaEtaria = livroDto.FaixaEtaria;
-
-                // Remove as categorias antigas
-                livro.Categorias.Clear();
-
-                // Adiciona as novas categorias
-                var categorias = livroDto.Categorias.Select(c => new Categoria { Tipo = c.Tipo, LivroId = livro.Id }).ToList();
-                livro.Categorias = categorias;
-
-                _context.Entry(livro).State = EntityState.Modified;
-
-                try
-                    {
-                    await _context.SaveChangesAsync();
-                    }
-                catch (DbUpdateConcurrencyException)
-                    {
-                        if (!LivroExists(id))
-                            {
-                            return NotFound();
-                            }
-                        else
-                            {
-                            throw;
-                            }
-                    }
-
-                return NoContent();
+            return NoContent();
         }
 
         // POST: api/Livro
