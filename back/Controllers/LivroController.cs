@@ -41,45 +41,55 @@ namespace back.Controllers
         }
 
         // PUT: api/Livro/5
+        // PUT: api/Livro/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutLivro(int id, LivroCreateDto livro)
-        {
-            // if (id != livro.Id)
-            // {
-            //     return BadRequest();
-            // }
-
-            var novoLivro = new Livro {
-                Id = id,
-                Nome = livro.Nome,
-                Preco = livro.Preco,
-                FaixaEtaria = livro.FaixaEtaria,
-            };
-
-            var Categorias = livro.Categorias.Select(c => new Categoria { Tipo = c.Tipo, Livro = novoLivro }).ToList();
-
-            novoLivro.Categorias = Categorias;
-
-            _context.Entry(novoLivro).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-                // return Ok(await _context.Livros.Include(l => l.Categorias).FirstOrDefaultAsync(l => l.Id == id));
-            }
-            catch (DbUpdateConcurrencyException)
+        public async Task<IActionResult> PutLivro(int id, LivroCreateDto livroDto)
             {
                 if (!LivroExists(id))
-                {
+                    {
                     return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+                    }
 
-            return NoContent();
+                var livro = await _context.Livros
+                    .Include(l => l.Categorias)
+                    .FirstOrDefaultAsync(l => l.Id == id);
+
+                if (livro == null)
+                    {
+                    return NotFound();
+                    }
+
+                // Atualiza as propriedades do livro
+                livro.Nome = livroDto.Nome;
+                livro.Preco = livroDto.Preco;
+                livro.FaixaEtaria = livroDto.FaixaEtaria;
+
+                // Remove as categorias antigas
+                livro.Categorias.Clear();
+
+                // Adiciona as novas categorias
+                var categorias = livroDto.Categorias.Select(c => new Categoria { Tipo = c.Tipo, LivroId = livro.Id }).ToList();
+                livro.Categorias = categorias;
+
+                _context.Entry(livro).State = EntityState.Modified;
+
+                try
+                    {
+                    await _context.SaveChangesAsync();
+                    }
+                catch (DbUpdateConcurrencyException)
+                    {
+                        if (!LivroExists(id))
+                            {
+                            return NotFound();
+                            }
+                        else
+                            {
+                            throw;
+                            }
+                    }
+
+                return NoContent();
         }
 
         // POST: api/Livro
