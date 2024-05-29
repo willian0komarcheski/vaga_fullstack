@@ -1,0 +1,42 @@
+<div class="div_tabela">
+    <table class="table">
+        <thead>
+            <tr>
+                <th *ngIf="livros && livros.length > 1">{{ livros[1]!.Id }}</th>
+                <th>nome</th>
+                <th>preço</th>
+                <th>faixa etaria</th>
+                <th class="inutil1"></th>
+                <th class="inutil1"></th>
+            </tr>
+        </thead>
+        <tbody>
+
+            @for (livro of livros; track livro.Id) {
+            <tr>
+
+                <td>{{ livro.Id }}</td>
+                <td>{{livro.Nome}}</td>
+                <td>{{livro.Preco}}</td>
+                <td>{{livro.Faixaetaria}}</td>
+            @for (categoria of livro.categorias; track categoria.Id) {
+                <td>{{categoria.Tipo}}</td>
+            }
+                <td class="inutil2">
+                    <LAbel >Editar</LAbel>
+                    <button ></button>
+                </td>
+                <td class="inutil2">
+                    
+                    <label >Deletar</label>
+                    <button></button>
+                
+                </td>
+            </tr>
+        }
+        @empty {
+            <td>sem livros</td>
+        }
+        </tbody>
+    </table>
+</div>
